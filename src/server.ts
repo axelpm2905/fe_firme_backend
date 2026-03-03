@@ -9,8 +9,7 @@ const PORT = process.env.PORT || 4000;
 async function start() {
   try {
     await db.sequelize.authenticate();
-  } catch (err) {
-    console.error('No se pudo conectar a MySQL:', err);
+  } catch {
     process.exit(1);
   }
 
