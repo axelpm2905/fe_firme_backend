@@ -1,4 +1,4 @@
-import { Router, Response } from 'express';
+import { Router, Request, Response } from 'express';
 import db from '../models';
 import { authenticate, requireAdmin, AuthRequest } from '../middlewares/auth';
 import { body, param, query, validationResult } from 'express-validator';
@@ -16,7 +16,7 @@ function slugify(text: string): string {
 
 router.get('/', [
   query('limit').optional().isInt({ min: 1, max: 100 }),
-], async (req: AuthRequest, res: Response) => {
+], async (req: Request, res: Response) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
@@ -50,7 +50,7 @@ router.get('/', [
 
 router.get('/slug/:slug', [
   param('slug').notEmpty(),
-], async (req: AuthRequest, res: Response) => {
+], async (req: Request, res: Response) => {
   const blog = await (db.Blog as any).findOne({
     where: { slug: req.params.slug },
     include: [{ model: db.User, as: 'author', attributes: ['id', 'email', 'displayName'] }],
@@ -76,7 +76,7 @@ router.get('/slug/:slug', [
 
 router.get('/:id', [
   param('id').isInt(),
-], async (req: AuthRequest, res: Response) => {
+], async (req: Request, res: Response) => {
   const blog = await (db.Blog as any).findByPk(req.params.id, {
     include: [{ model: db.User, as: 'author', attributes: ['id', 'email', 'displayName'] }],
   });
@@ -110,12 +110,14 @@ router.post('/',
     body('commentsEnabled').optional().isBoolean(),
     body('slug').optional().trim(),
   ],
-  async (req: AuthRequest, res: Response) => {
+  async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
     const { title, content, category, featuredImage, commentsEnabled } = req.body;
     const slug = req.body.slug || slugify(title);
+
+    const authReq = req as AuthRequest;
 
     const blog = await (db.Blog as any).create({
       title,
@@ -124,7 +126,7 @@ router.post('/',
       category,
       featuredImage: featuredImage || null,
       commentsEnabled: commentsEnabled !== false,
-      authorId: req.user!.id,
+      authorId: authReq.user!.id,
     });
 
     const data = blog.get();
@@ -149,7 +151,7 @@ router.put('/:id',
     body('commentsEnabled').optional().isBoolean(),
     body('slug').optional().trim().notEmpty(),
   ],
-  async (req: AuthRequest, res: Response) => {
+  async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
@@ -176,7 +178,7 @@ router.delete('/:id',
   authenticate,
   requireAdmin,
   [param('id').isInt()],
-  async (req: AuthRequest, res: Response) => {
+  async (req: Request, res: Response) => {
     const blog = await (db.Blog as any).findByPk(req.params.id);
     if (!blog) return res.status(404).json({ error: 'Blog no encontrado.' });
     await blog.destroy();

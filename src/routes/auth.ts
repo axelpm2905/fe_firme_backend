@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
+import jwt, { type Secret } from 'jsonwebtoken';
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import db from '../models';
@@ -12,12 +12,12 @@ const JWT_EXPIRES = process.env.JWT_EXPIRES_IN || '7d';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
 function generateToken(user: { id: number; email: string; role: string }) {
-  const secret = process.env.JWT_SECRET;
+  const secret = process.env.JWT_SECRET as Secret | undefined;
   if (!secret) throw new Error('JWT_SECRET no configurado');
   return jwt.sign(
     { userId: user.id, email: user.email, role: user.role },
     secret,
-    { expiresIn: JWT_EXPIRES }
+    { expiresIn: JWT_EXPIRES as any }
   );
 }
 
@@ -117,7 +117,7 @@ router.get(
   }
 );
 
-router.get('/me', async (req: AuthRequest, res: Response) => {
+router.get('/me', async (req: Request, res: Response) => {
   const authHeader = req.headers.authorization;
   const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
 

@@ -1,11 +1,11 @@
-import { Router, Response } from 'express';
+import { Router, Request, Response } from 'express';
 import db from '../models';
 import { authenticate, requireAdmin, AuthRequest } from '../middlewares/auth';
 import { body, param, validationResult } from 'express-validator';
 
 const router = Router();
 
-router.get('/', async (_req: AuthRequest, res: Response) => {
+router.get('/', async (_req: Request, res: Response) => {
   const events = await (db.Event as any).findAll({
     order: [['date', 'ASC'], ['time', 'ASC']],
   });
@@ -25,7 +25,7 @@ router.get('/', async (_req: AuthRequest, res: Response) => {
   res.json(formatted);
 });
 
-router.get('/:id', [param('id').isInt()], async (req: AuthRequest, res: Response) => {
+router.get('/:id', [param('id').isInt()], async (req: Request, res: Response) => {
   const event = await (db.Event as any).findByPk(req.params.id);
   if (!event) return res.status(404).json({ error: 'Evento no encontrado.' });
   const d = event.get();
@@ -51,7 +51,7 @@ router.post('/',
     body('location').optional().trim(),
     body('description').optional().trim(),
   ],
-  async (req: AuthRequest, res: Response) => {
+  async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
     const event = await (db.Event as any).create(req.body);
@@ -71,7 +71,7 @@ router.put('/:id',
     body('location').optional().trim(),
     body('description').optional().trim(),
   ],
-  async (req: AuthRequest, res: Response) => {
+  async (req: Request, res: Response) => {
     const event = await (db.Event as any).findByPk(req.params.id);
     if (!event) return res.status(404).json({ error: 'Evento no encontrado.' });
     const updates = { ...req.body };
@@ -86,7 +86,7 @@ router.delete('/:id',
   authenticate,
   requireAdmin,
   [param('id').isInt()],
-  async (req: AuthRequest, res: Response) => {
+  async (req: Request, res: Response) => {
     const event = await (db.Event as any).findByPk(req.params.id);
     if (!event) return res.status(404).json({ error: 'Evento no encontrado.' });
     await event.destroy();

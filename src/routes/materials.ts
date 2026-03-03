@@ -1,11 +1,11 @@
-import { Router, Response } from 'express';
+import { Router, Request, Response } from 'express';
 import db from '../models';
 import { authenticate, requireAdmin, AuthRequest } from '../middlewares/auth';
 import { body, param, validationResult } from 'express-validator';
 
 const router = Router();
 
-router.get('/', async (_req: AuthRequest, res: Response) => {
+router.get('/', async (_req: Request, res: Response) => {
   const materials = await (db.Material as any).findAll({
     order: [['createdAt', 'DESC']],
   });
@@ -24,7 +24,7 @@ router.get('/', async (_req: AuthRequest, res: Response) => {
   res.json(formatted);
 });
 
-router.get('/:id', [param('id').isInt()], async (req: AuthRequest, res: Response) => {
+router.get('/:id', [param('id').isInt()], async (req: Request, res: Response) => {
   const material = await (db.Material as any).findByPk(req.params.id);
   if (!material) return res.status(404).json({ error: 'Material no encontrado.' });
   const d = material.get();
@@ -48,7 +48,7 @@ router.post('/',
     body('image').optional(),
     body('pdfUrl').optional(),
   ],
-  async (req: AuthRequest, res: Response) => {
+  async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
     const { title, description, image, pdfUrl } = req.body;
@@ -68,7 +68,7 @@ router.put('/:id',
     body('image').optional(),
     body('pdfUrl').optional(),
   ],
-  async (req: AuthRequest, res: Response) => {
+  async (req: Request, res: Response) => {
     const material = await (db.Material as any).findByPk(req.params.id);
     if (!material) return res.status(404).json({ error: 'Material no encontrado.' });
     const updates = { ...req.body };
@@ -83,7 +83,7 @@ router.delete('/:id',
   authenticate,
   requireAdmin,
   [param('id').isInt()],
-  async (req: AuthRequest, res: Response) => {
+  async (req: Request, res: Response) => {
     const material = await (db.Material as any).findByPk(req.params.id);
     if (!material) return res.status(404).json({ error: 'Material no encontrado.' });
     await material.destroy();

@@ -1,4 +1,4 @@
-import { Router, Response } from 'express';
+import { Router, Request, Response } from 'express';
 import db from '../models';
 import { authenticate, requireAdmin, AuthRequest } from '../middlewares/auth';
 import { body, param, query, validationResult } from 'express-validator';
@@ -8,7 +8,7 @@ const router = Router();
 router.get('/', [
   query('blogId').optional().isInt(),
   query('approvedOnly').optional().isIn(['true', 'false']),
-], async (req: AuthRequest, res: Response) => {
+], async (req: Request, res: Response) => {
   const where: Record<string, unknown> = {};
   if (req.query.blogId) where.blogId = req.query.blogId;
   if (req.query.approvedOnly === 'true') where.approved = true;
@@ -43,11 +43,13 @@ router.post('/',
     body('blogId').isInt(),
     body('content').notEmpty().trim(),
   ],
-  async (req: AuthRequest, res: Response) => {
+  async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
     const { blogId, content } = req.body;
+
+    const authReq = req as AuthRequest;
 
     const blog = await (db.Blog as any).findByPk(blogId);
     if (!blog) return res.status(404).json({ error: 'Blog no encontrado.' });
@@ -56,7 +58,7 @@ router.post('/',
 
     const comment = await (db.Comment as any).create({
       blogId,
-      userId: req.user!.id,
+      userId: authReq.user!.id,
       content: content.trim(),
       approved: false,
     });
@@ -77,7 +79,7 @@ router.patch('/:id/approve',
   authenticate,
   requireAdmin,
   [param('id').isInt()],
-  async (req: AuthRequest, res: Response) => {
+  async (req: Request, res: Response) => {
     const comment = await (db.Comment as any).findByPk(req.params.id);
     if (!comment) return res.status(404).json({ error: 'Comentario no encontrado.' });
     await comment.update({ approved: true });
@@ -89,7 +91,7 @@ router.delete('/:id',
   authenticate,
   requireAdmin,
   [param('id').isInt()],
-  async (req: AuthRequest, res: Response) => {
+  async (req: Request, res: Response) => {
     const comment = await (db.Comment as any).findByPk(req.params.id);
     if (!comment) return res.status(404).json({ error: 'Comentario no encontrado.' });
     await comment.destroy();

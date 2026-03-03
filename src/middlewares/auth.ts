@@ -17,7 +17,7 @@ export interface AuthRequest extends Request {
   };
 }
 
-export const authenticate = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
   const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
 
@@ -37,7 +37,7 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
     }
 
     const u = user.get() as { id: number; email: string; displayName: string | null; role: string };
-    req.user = {
+    (req as AuthRequest).user = {
       id: u.id,
       email: u.email,
       displayName: u.displayName,
@@ -49,11 +49,12 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
   }
 };
 
-export const requireAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
-  if (!req.user) {
+export const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
+  const authReq = req as AuthRequest;
+  if (!authReq.user) {
     return res.status(401).json({ error: 'No autorizado.' });
   }
-  if (req.user.role !== 'ADMIN') {
+  if (authReq.user.role !== 'ADMIN') {
     return res.status(403).json({ error: 'Acceso denegado. Se requiere rol de administrador.' });
   }
   next();
