@@ -1,0 +1,35 @@
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+export default {
+  development: {
+    username: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'fe_firme_blog',
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '3306', 10),
+    dialect: 'mysql' as const,
+    logging: false,
+    pool: { max: 5, min: 0, acquire: 30000, idle: 10000 },
+  },
+  test: {
+    username: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME ? `${process.env.DB_NAME}_test` : 'fe_firme_blog_test',
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '3306', 10),
+    dialect: 'mysql' as const,
+    logging: false,
+  },
+  production: {
+    username: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    host: process.env.DB_HOST,
+    port: parseInt(process.env.DB_PORT || '3306', 10),
+    dialect: 'mysql' as const,
+    logging: false,
+    pool: { max: 10, min: 2, acquire: 30000, idle: 10000 },
+  },
+};
